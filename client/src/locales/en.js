@@ -4,6 +4,7 @@ export default {
     overview: 'Overview',
     inventory: 'Inventory',
     orders: 'Orders',
+    restocking: 'Restocking',
     finance: 'Finance',
     demandForecast: 'Demand Forecast',
     companyName: 'Catalyst Components',
@@ -126,6 +127,45 @@ export default {
       status: 'Status',
       expectedDelivery: 'Expected Delivery',
       actualDelivery: 'Actual Delivery'
+    },
+    submittedOrders: {
+      title: 'Submitted Orders',
+      description: 'Restocking orders placed from the Restocking tab',
+      noOrders: 'No restocking orders submitted yet',
+      loadError: 'Failed to load submitted restocking orders',
+      daysSuffix: 'days',
+      table: {
+        orderNumber: 'Order Number',
+        items: 'Items',
+        totalCost: 'Total Cost',
+        leadTime: 'Lead Time',
+        expectedDelivery: 'Expected Delivery',
+        status: 'Status'
+      }
+    }
+  },
+
+  // Restocking
+  restocking: {
+    title: 'Restocking',
+    description: 'Recommend and place restocking orders within your available budget',
+    budgetLabel: 'Available Budget',
+    recommendedTitle: 'Recommended Items',
+    noRecommendations: 'No items fit within the current budget',
+    selectedTotal: 'Selected Total',
+    placeOrder: 'Place Order',
+    placingOrder: 'Placing Order...',
+    orderSuccess: 'Restocking order submitted successfully',
+    orderError: 'Failed to submit restocking order',
+    selectAtLeastOne: 'Select at least one item to place an order',
+    table: {
+      item: 'Item',
+      sku: 'SKU',
+      trend: 'Trend',
+      shortfall: 'Shortfall',
+      unitCost: 'Unit Cost',
+      quantity: 'Quantity',
+      lineTotal: 'Line Total'
     }
   },
 
@@ -204,6 +244,7 @@ export default {
     shipped: 'Shipped',
     processing: 'Processing',
     backordered: 'Backordered',
+    submitted: 'Submitted',
     inStock: 'In Stock',
     lowStock: 'Low Stock',
     adequate: 'Adequate'

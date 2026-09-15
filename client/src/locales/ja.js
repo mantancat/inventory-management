@@ -4,6 +4,7 @@ export default {
     overview: '概要',
     inventory: '在庫',
     orders: '注文',
+    restocking: '補充',
     finance: '財務',
     demandForecast: '需要予測',
     companyName: '触媒コンポーネンツ',
@@ -126,6 +127,45 @@ export default {
       status: 'ステータス',
       expectedDelivery: '予定配達日',
       actualDelivery: '実際の配達日'
+    },
+    submittedOrders: {
+      title: '補充注文',
+      description: '補充タブから送信された注文',
+      noOrders: 'まだ補充注文は送信されていません',
+      loadError: '送信済みの補充注文を読み込めませんでした',
+      daysSuffix: '日',
+      table: {
+        orderNumber: '注文番号',
+        items: '品目',
+        totalCost: '合計金額',
+        leadTime: 'リードタイム',
+        expectedDelivery: '予定配達日',
+        status: 'ステータス'
+      }
+    }
+  },
+
+  // Restocking
+  restocking: {
+    title: '補充',
+    description: '需要予測に基づき、予算内で補充注文を推奨・発注します',
+    budgetLabel: '利用可能な予算',
+    recommendedTitle: '推奨品目',
+    noRecommendations: '現在の予算内に収まる品目がありません',
+    selectedTotal: '選択合計',
+    placeOrder: '注文を確定',
+    placingOrder: '注文処理中...',
+    orderSuccess: '補充注文が正常に送信されました',
+    orderError: '補充注文の送信に失敗しました',
+    selectAtLeastOne: '注文するには少なくとも1つの品目を選択してください',
+    table: {
+      item: '品目',
+      sku: 'SKU',
+      trend: '傾向',
+      shortfall: '不足数',
+      unitCost: '単価',
+      quantity: '数量',
+      lineTotal: '小計'
     }
   },
 
@@ -204,6 +244,7 @@ export default {
     shipped: '出荷済み',
     processing: '処理中',
     backordered: 'バックオーダー',
+    submitted: '送信済み',
     inStock: '在庫あり',
     lowStock: '在庫僅少',
     adequate: '適量'

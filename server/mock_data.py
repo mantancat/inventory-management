@@ -35,5 +35,11 @@ recent_transactions = load_json_file('transactions.json')
 # Load purchase orders
 purchase_orders = load_json_file('purchase_orders.json')
 
+# Load restocking orders submitted from the Restocking tab.
+# Starts empty; POST /api/restocking-orders appends to this list in place at
+# runtime, so submitted orders are visible for the life of the process but
+# (like every other dataset here) are not written back to disk.
+restocking_orders = load_json_file('restocking_orders.json')
+
 # All data is now loaded from JSON files in the data/ directory
 # This allows for easier maintenance and updates of the sample data
