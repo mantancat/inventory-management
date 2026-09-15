@@ -132,6 +132,7 @@ export default {
       title: 'Submitted Orders',
       description: 'Restocking orders placed from the Restocking tab',
       noOrders: 'No restocking orders submitted yet',
+      loadError: 'Failed to load submitted restocking orders',
       daysSuffix: 'days',
       table: {
         orderNumber: 'Order Number',

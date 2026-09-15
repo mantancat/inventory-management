@@ -208,6 +208,9 @@ def create_restocking_order(request: CreateRestockingOrderRequest):
     from the request body, so a client can't submit an order at a price it didn't
     actually see.
     """
+    if request.budget <= 0:
+        raise HTTPException(status_code=400, detail="Budget must be greater than 0")
+
     forecasts_by_sku = {f["item_sku"]: f for f in demand_forecasts}
 
     line_items = []
@@ -235,6 +238,16 @@ def create_restocking_order(request: CreateRestockingOrderRequest):
         raise HTTPException(status_code=400, detail="An order must include at least one item")
 
     total_cost = round(sum(item["line_total"] for item in line_items), 2)
+
+    # The budget is the invariant this feature exists to enforce, so check it
+    # server-side against the recomputed total rather than relying on the
+    # client's allocator. Without this an order can be persisted whose
+    # total_cost exceeds the budget stored alongside it.
+    if total_cost > request.budget:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Order total {total_cost} exceeds the submitted budget {request.budget}"
+        )
 
     # Lead time isn't tracked anywhere in the mock data yet; reuse the same
     # 7-14 day supplier-lead-time range server/generate_data.py already uses

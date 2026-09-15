@@ -132,6 +132,7 @@ export default {
       title: '補充注文',
       description: '補充タブから送信された注文',
       noOrders: 'まだ補充注文は送信されていません',
+      loadError: '送信済みの補充注文を読み込めませんでした',
       daysSuffix: '日',
       table: {
         orderNumber: '注文番号',

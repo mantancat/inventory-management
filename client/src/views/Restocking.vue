@@ -60,7 +60,7 @@
                   </span>
                 </td>
                 <td>{{ rec.shortfall }}</td>
-                <td>{{ formatCurrency(rec.unit_cost, currentCurrency) }}</td>
+                <td>{{ formatCurrencyWithDecimals(rec.unit_cost, currentCurrency, 2) }}</td>
                 <td><strong>{{ rec.qty }}</strong></td>
                 <td>{{ formatCurrency(rec.line_total, currentCurrency) }}</td>
               </tr>
@@ -94,7 +94,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { api } from '../api'
 import { useI18n } from '../composables/useI18n'
-import { formatCurrency } from '../utils/currency.js'
+import { formatCurrency, formatCurrencyWithDecimals } from '../utils/currency.js'
 
 export default {
   name: 'Restocking',
@@ -246,6 +246,7 @@ export default {
       t,
       currentCurrency,
       formatCurrency,
+      formatCurrencyWithDecimals,
       loading,
       error,
       budget,

@@ -109,6 +109,57 @@ class TestRestockingEndpoints:
         response = client.post("/api/restocking-orders", json=payload)
         assert response.status_code == 400
 
+    def test_create_restocking_order_over_budget(self, client):
+        """Test that an order whose recomputed total exceeds the budget is rejected."""
+        forecasts = client.get("/api/demand").json()
+        forecast = forecasts[0]
+
+        # Deliberately ask for far more than the budget can cover
+        payload = {
+            "budget": 10,
+            "items": [
+                {"item_sku": forecast["item_sku"], "quantity": 10000}
+            ]
+        }
+        response = client.post("/api/restocking-orders", json=payload)
+        assert response.status_code == 400
+        assert "exceeds" in response.json()["detail"].lower()
+
+    def test_over_budget_order_is_not_persisted(self, client):
+        """Test that a rejected over-budget order does not land in the list."""
+        before = len(client.get("/api/restocking-orders").json())
+
+        forecasts = client.get("/api/demand").json()
+        payload = {
+            "budget": 1,
+            "items": [{"item_sku": forecasts[0]["item_sku"], "quantity": 5000}]
+        }
+        assert client.post("/api/restocking-orders", json=payload).status_code == 400
+
+        after = len(client.get("/api/restocking-orders").json())
+        assert after == before
+
+    def test_create_restocking_order_non_positive_budget(self, client):
+        """Test that a zero or negative budget is rejected."""
+        forecasts = client.get("/api/demand").json()
+
+        for bad_budget in (0, -100):
+            payload = {
+                "budget": bad_budget,
+                "items": [{"item_sku": forecasts[0]["item_sku"], "quantity": 1}]
+            }
+            response = client.post("/api/restocking-orders", json=payload)
+            assert response.status_code == 400, f"budget={bad_budget}"
+
+    def test_order_total_never_exceeds_stored_budget(self, client):
+        """Test that every persisted order is internally consistent."""
+        orders = client.get("/api/restocking-orders").json()
+        for order in orders:
+            assert order["total_cost"] <= order["budget"], order["order_number"]
+            # line totals must also sum to the reported total
+            summed = round(sum(i["line_total"] for i in order["items"]), 2)
+            assert summed == order["total_cost"], order["order_number"]
+
     def test_create_restocking_order_no_items(self, client):
         """Test that an order with an empty item list is rejected."""
         payload = {"budget": 1000, "items": []}

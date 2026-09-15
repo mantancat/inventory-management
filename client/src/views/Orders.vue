@@ -79,7 +79,9 @@
         <div class="card-header">
           <h3 class="card-title">{{ t('orders.submittedOrders.title') }}</h3>
         </div>
-        <div v-if="restockingOrders.length === 0" class="no-restocking-orders">
+        <div v-if="restockingLoading" class="loading">{{ t('common.loading') }}</div>
+        <div v-else-if="restockingError" class="error">{{ restockingError }}</div>
+        <div v-else-if="restockingOrders.length === 0" class="no-restocking-orders">
           {{ t('orders.submittedOrders.noOrders') }}
         </div>
         <div v-else class="table-container">
@@ -103,9 +105,9 @@
                       {{ t('orders.itemsCount', { count: order.items.length }) }}
                     </summary>
                     <div class="items-dropdown">
-                      <div v-for="(item, idx) in order.items" :key="idx" class="item-entry">
+                      <div v-for="item in order.items" :key="item.item_sku" class="item-entry">
                         <span class="item-name">{{ item.item_name }}</span>
-                        <span class="item-meta">{{ t('orders.quantity') }}: {{ item.quantity }} @ {{ formatCurrency(item.unit_cost, currentCurrency) }}</span>
+                        <span class="item-meta">{{ t('orders.quantity') }}: {{ item.quantity }} @ {{ formatCurrencyWithDecimals(item.unit_cost, currentCurrency, 2) }}</span>
                       </div>
                     </div>
                   </details>
@@ -132,7 +134,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { api } from '../api'
 import { useFilters } from '../composables/useFilters'
 import { useI18n } from '../composables/useI18n'
-import { formatCurrency } from '../utils/currency.js'
+import { formatCurrency, formatCurrencyWithDecimals } from '../utils/currency.js'
 
 export default {
   name: 'Orders',
@@ -147,6 +149,10 @@ export default {
     const orders = ref([])
     // Separate dataset from the filtered sales orders above - not tied to useFilters()
     const restockingOrders = ref([])
+    // Tracked separately from the sales-orders loading/error pair so this card
+    // can show its own state without a failure here blanking the table above.
+    const restockingLoading = ref(true)
+    const restockingError = ref(null)
 
     // Use shared filters
     const {
@@ -206,11 +212,18 @@ export default {
     }
 
     const loadRestockingOrders = async () => {
+      restockingLoading.value = true
+      restockingError.value = null
       try {
         restockingOrders.value = await api.getRestockingOrders()
       } catch (err) {
-        // Don't let a failure here break the existing sales orders table
+        // Surface the failure in this card only, so the sales orders table
+        // above still renders. Without this the empty-state message would
+        // claim there are no submitted orders when the request actually failed.
+        restockingError.value = t('orders.submittedOrders.loadError')
         console.error('Failed to load restocking orders:', err)
+      } finally {
+        restockingLoading.value = false
       }
     }
 
@@ -225,12 +238,15 @@ export default {
       error,
       orders,
       restockingOrders,
+      restockingLoading,
+      restockingError,
       getOrdersByStatus,
       getOrderStatusClass,
       formatDate,
       currencySymbol,
       currentCurrency,
       formatCurrency,
+      formatCurrencyWithDecimals,
       translateProductName,
       translateCustomerName
     }
