@@ -1,8 +1,10 @@
+import random
+from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
-from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders
+from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders, restocking_orders
 
 app = FastAPI(title="Factory Inventory Management System")
 
@@ -89,6 +91,7 @@ class DemandForecast(BaseModel):
     forecasted_demand: int
     trend: str
     period: str
+    unit_cost: float
 
 class BacklogItem(BaseModel):
     id: str
@@ -119,6 +122,32 @@ class CreatePurchaseOrderRequest(BaseModel):
     unit_cost: float
     expected_delivery_date: str
     notes: Optional[str] = None
+
+class RestockingOrderItem(BaseModel):
+    item_sku: str
+    item_name: str
+    quantity: int
+    unit_cost: float
+    line_total: float
+
+class RestockingOrder(BaseModel):
+    id: str
+    order_number: str
+    created_date: str
+    items: List[RestockingOrderItem]
+    total_cost: float
+    budget: float
+    lead_time_days: int
+    expected_delivery_date: str
+    status: str
+
+class RestockingOrderItemRequest(BaseModel):
+    item_sku: str
+    quantity: int
+
+class CreateRestockingOrderRequest(BaseModel):
+    budget: float
+    items: List[RestockingOrderItemRequest]
 
 # API endpoints
 @app.get("/")
@@ -165,6 +194,68 @@ def get_order(order_id: str):
 def get_demand_forecasts():
     """Get demand forecasts"""
     return demand_forecasts
+
+@app.get("/api/restocking-orders", response_model=List[RestockingOrder])
+def get_restocking_orders():
+    """Get all restocking orders submitted from the Restocking tab"""
+    return restocking_orders
+
+@app.post("/api/restocking-orders", response_model=RestockingOrder, status_code=201)
+def create_restocking_order(request: CreateRestockingOrderRequest):
+    """Create a restocking order from a set of demand-forecast SKUs and quantities.
+
+    Item names/costs are recomputed here from demand_forecasts rather than trusted
+    from the request body, so a client can't submit an order at a price it didn't
+    actually see.
+    """
+    forecasts_by_sku = {f["item_sku"]: f for f in demand_forecasts}
+
+    line_items = []
+    for requested in request.items:
+        forecast = forecasts_by_sku.get(requested.item_sku)
+        if not forecast:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown item_sku: {requested.item_sku}"
+            )
+        if requested.quantity <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Quantity for {requested.item_sku} must be greater than 0"
+            )
+        line_items.append({
+            "item_sku": forecast["item_sku"],
+            "item_name": forecast["item_name"],
+            "quantity": requested.quantity,
+            "unit_cost": forecast["unit_cost"],
+            "line_total": round(requested.quantity * forecast["unit_cost"], 2)
+        })
+
+    if not line_items:
+        raise HTTPException(status_code=400, detail="An order must include at least one item")
+
+    total_cost = round(sum(item["line_total"] for item in line_items), 2)
+
+    # Lead time isn't tracked anywhere in the mock data yet; reuse the same
+    # 7-14 day supplier-lead-time range server/generate_data.py already uses
+    # when it fabricates delivery dates for regular orders.
+    lead_time_days = random.randint(7, 14)
+    created_date = datetime.now()
+    expected_delivery_date = created_date + timedelta(days=lead_time_days)
+
+    order = {
+        "id": str(len(restocking_orders) + 1),
+        "order_number": f"RO-{created_date.year}-{len(restocking_orders) + 1:04d}",
+        "created_date": created_date.isoformat(),
+        "items": line_items,
+        "total_cost": total_cost,
+        "budget": request.budget,
+        "lead_time_days": lead_time_days,
+        "expected_delivery_date": expected_delivery_date.isoformat(),
+        "status": "Submitted"
+    }
+    restocking_orders.append(order)
+    return order
 
 @app.get("/api/backlog", response_model=List[BacklogItem])
 def get_backlog():
